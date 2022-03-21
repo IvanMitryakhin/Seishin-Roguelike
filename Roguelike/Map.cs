@@ -11,6 +11,7 @@ namespace Roguelike
         public Tile[,] Tiles;
         public List<Wall> walls;
         public List<Monster> monsters;
+        public List<Bandage> bandages;
 
         public Player player = new Player(new Point(15, 15));
 
@@ -21,6 +22,8 @@ namespace Roguelike
         private int yMax;
         private int cameraOffsetX = 0;
         private int cameraOffsetY = 0;
+        private int xTitle = 41;
+        private int yTitle = 2;
 
         public Map() { }
 
@@ -28,11 +31,12 @@ namespace Roguelike
         {
             walls = new List<Wall>();
             monsters = new List<Monster>();
+            bandages = new List<Bandage>();
 
             this.xMax = xMax;
             this.yMax = yMax;
             Tiles = new Tile[xMax, yMax];
-            SpawnMobs();
+            SpawnMobsAndBandages();
             GenerateMap();
             SetMapTiles();
         }
@@ -65,6 +69,7 @@ namespace Roguelike
         {
             walls.ForEach(w => Tiles[w.X, w.Y] = w);
             monsters.ForEach(m => Tiles[m.X, m.Y] = m);
+            bandages.ForEach(b => Tiles[b.X, b.Y] = b);
             Tiles[player.X, player.Y] = player;
         }
         // All about generating objects, tiles, etc.
@@ -87,39 +92,46 @@ namespace Roguelike
                 walls.Add(right);
             }
         }
-        private void SpawnMobs()
+        private void SpawnMobsAndBandages()
         {
             Random r = new Random();
-            for (int i = 0; i < r.Next(1, 6); i++)
+            for (int i = 0; i < r.Next(3, 15); i++)
             {
                 // Ensures if mob's spawning position != player's spawning position
-                int x = r.Next(0, xMax);
-                int y = r.Next(0, yMax);
+                int x = r.Next(1, xMax);
+                int y = r.Next(1, yMax);
                 if (x == player.X)
                 {
                     while (x == player.X)
                     {
-                        x = r.Next(0, xMax);
+                        x = r.Next(1, xMax);
                     }
                 }
                 if (y == player.Y)
                 {
                     while (y == player.X)
                     {
-                        y = r.Next(0, yMax);
+                        y = r.Next(1, yMax);
                     }
                 }
-
-                Monster m = new Monster(new Point(x, y));
-                monsters.Add(m);
+                if(r.Next(3) < 2)
+                {
+                    Monster m = new Monster(new Point(x, y));
+                    monsters.Add(m);
+                }
+                else
+                {
+                    Console.Beep();
+                    Bandage b = new Bandage(new Point(x, y));
+                    bandages.Add(b);
+                }
             }
         }
-        
 
+  
         // Reads console input
         public void ExecuteCommand(ConsoleKeyInfo command)
         {
-
             switch (command.Key)
             {
                 case ConsoleKey.W:
@@ -128,12 +140,28 @@ namespace Roguelike
                 case ConsoleKey.D:
                     GetNewLocation(command, new Point(player.X, player.Y));
                     break;
+                case ConsoleKey.Spacebar:
+                    HitTheMonster();
+                    break;
+            }
+            int nothing = -1;
+            if (IsMobNear(player.X, player.Y, ref nothing))
+            {
+                Console.SetCursorPosition(xTitle, yTitle);
+                Console.WriteLine("Press the space to fight");
+            }
+            if (IsMobNear(player.X, player.Y, ref nothing))
+            {
+                Console.SetCursorPosition(xTitle, yTitle);
+                Console.WriteLine("Press the space to fight");
             }
             SetMapTiles();
         }
         // Player Movement
         public void GetNewLocation(ConsoleKeyInfo command, Point move)
         {
+            Console.SetCursorPosition(xTitle, yTitle);
+            Console.Write("                         ");
             switch (command.Key)
             {
                 case ConsoleKey.W:
@@ -162,6 +190,18 @@ namespace Roguelike
                 player.X = move.X;
                 player.Y = move.Y;
             }
+            int positionOfCreature = 0;
+            if(IsMobNear(player.X, player.Y, ref positionOfCreature))
+            {
+                player.Hits -= 1;
+            }
+            if (IsBandageNear(player.X, player.Y, ref positionOfCreature))
+            {
+                player.Hits += bandages[positionOfCreature].Hits;
+                bandages.RemoveAt(positionOfCreature);
+                Console.SetCursorPosition(xTitle, yTitle);
+                Console.Write("Health points increased!                 ");
+            }
         }
 
         private bool IsInvalidMove(int x, int y)
@@ -178,6 +218,56 @@ namespace Roguelike
             return (x == 0 || x == xMax - 1 || y == yMax - 1 || y == 0) || mobsNearby;
         }
 
+        private bool IsMobNear(int x, int y, ref int numberOfCurrentMob)
+        {
+            bool mobNear = false;
+            for (int i = 0; i < monsters.Count; i++)
+            {
+                mobNear = (monsters[i].X == x + 1 || monsters[i].X == x - 1) && (monsters[i].Y == y) || (monsters[i].Y == y - 1 || monsters[i].Y == y + 1) && (monsters[i].X == x);
+                if (mobNear)
+                {
+                    numberOfCurrentMob = i;
+                    break;
+                }
+            }
+            return mobNear;
+        }
+
+        private bool IsBandageNear(int x, int y, ref int numberOfCurrentBandage)
+        {
+            bool bandageNear = false;
+            for (int i = 0; i < bandages.Count; i++)
+            {
+                bandageNear = (bandages[i].X == x + 1 || bandages[i].X == x - 1) && (bandages[i].Y == y) || (bandages[i].Y == y - 1 || bandages[i].Y == y + 1) && (bandages[i].X == x);
+                if (bandageNear)
+                {
+                    numberOfCurrentBandage = i;
+                    break;
+                }
+            }
+            return bandageNear;
+        }
+
+        private void HitTheMonster()
+        {
+            Console.SetCursorPosition(xTitle, yTitle);
+            int numberOfMonster = -1;
+            if(IsMobNear(player.X, player.Y, ref numberOfMonster))
+            {
+                monsters[numberOfMonster].Hits -= 1;
+                if(monsters[numberOfMonster].Hits == 0)
+                {
+                    monsters.RemoveAt(numberOfMonster);
+                    player.Hits += 1;
+                    Console.Write("Great job!                  ");
+                }
+            }
+            else
+            {
+                Console.Write("There's no one around!");
+            }
+        }
+
         public void Refresh()
         {
             Console.SetCursorPosition(0, 0);
@@ -191,7 +281,7 @@ namespace Roguelike
                 }
                 Console.WriteLine();
             }
-          
+            Console.SetCursorPosition(xTitle, yTitle);
         }
     }
 }

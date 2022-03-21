@@ -8,19 +8,24 @@
     "net5.0": []
   },
   "packageFolders": {
-    "C:\\Users\\mitri\\.nuget\\packages\\": {}
+    "C:\\Users\\Егорлох\\.nuget\\packages\\": {},
+    "C:\\PROGRAMS!\\Visual studio\\shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\mitri\\source\\repos\\Roguelike\\Roguelike\\Roguelike.csproj",
+      "projectUniqueName": "C:\\PROJECTS!\\Roguelike\\Seishin-Roguelike\\Roguelike\\Roguelike.csproj",
       "projectName": "Roguelike",
-      "projectPath": "C:\\Users\\mitri\\source\\repos\\Roguelike\\Roguelike\\Roguelike.csproj",
-      "packagesPath": "C:\\Users\\mitri\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\mitri\\source\\repos\\Roguelike\\Roguelike\\obj\\",
+      "projectPath": "C:\\PROJECTS!\\Roguelike\\Seishin-Roguelike\\Roguelike\\Roguelike.csproj",
+      "packagesPath": "C:\\Users\\Егорлох\\.nuget\\packages\\",
+      "outputPath": "C:\\PROJECTS!\\Roguelike\\Seishin-Roguelike\\Roguelike\\obj\\",
       "projectStyle": "PackageReference",
+      "fallbackFolders": [
+        "C:\\PROGRAMS!\\Visual studio\\shared\\NuGetPackages"
+      ],
       "configFilePaths": [
-        "C:\\Users\\mitri\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\Егорлох\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
@@ -60,7 +65,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.400\\RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.405\\RuntimeIdentifierGraph.json"
       }
     }
   }
