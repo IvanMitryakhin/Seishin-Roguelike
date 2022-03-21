@@ -10,7 +10,7 @@ namespace Roguelike
     {
         private string nameOfGame = "Рогалик за день";
         private string description = "Когда-то давно 4 расы рогаликов жили в мире. Но народ rogue развязал войну";
-        private string nameOfPlayer;
+        public string nameOfPlayer;
 
         public Greeting()
         {
@@ -33,6 +33,7 @@ namespace Roguelike
 
         private void Start()
         {
+            Console.ForegroundColor = ConsoleColor.White;
             Console.SetCursorPosition(30, 0);
             Console.WriteLine(nameOfGame);
             Console.Write("Выберите имя своему рогалику:  ");

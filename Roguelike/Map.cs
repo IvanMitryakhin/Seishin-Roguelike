@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using System.Threading;
 
 namespace Roguelike
 {
@@ -42,7 +42,6 @@ namespace Roguelike
         }
         public bool IsGameActive
         {
-
             get
             {
                 return player.Hits > 0;
@@ -92,7 +91,7 @@ namespace Roguelike
                 walls.Add(right);
             }
         }
-        private void SpawnMobsAndBandages()
+        protected void SpawnMobsAndBandages()
         {
             Random r = new Random();
             for (int i = 0; i < r.Next(3, 15); i++)
@@ -128,7 +127,43 @@ namespace Roguelike
             }
         }
 
-  
+        public void MonstersActivity()
+        {
+            foreach(Monster m in monsters)
+            {
+                MonstersApproach(m);
+                int positionOfCreature = -1;
+                if (IsBandageNear(m.X, m.Y, ref positionOfCreature))
+                {
+                    m.Hits += bandages[positionOfCreature].Hits;
+                    bandages.RemoveAt(positionOfCreature);
+                    Console.SetCursorPosition(xTitle, yTitle);
+                    Console.Write("The bandage is lost(         ");
+                }
+            }
+            //Thread.Sleep(100);
+        }
+
+        private void MonstersApproach(Monster m)
+        {
+           if(Math.Abs(m.X + 1 - player.X) < Math.Abs(m.X - player.X) && Math.Abs(m.X + 1 - player.X) > 0)
+            {
+                m.X += 1;
+            }
+            else if (Math.Abs(m.X - 1 - player.X) < Math.Abs(m.X - player.X) && Math.Abs(m.X - 1 - player.X) > 0)
+            {
+                m.X -= 1;
+            }
+            if (Math.Abs(m.Y + 1 - player.Y) < Math.Abs(m.Y - player.Y) && Math.Abs(m.Y + 1 - player.Y) > 0)
+            {
+                m.Y += 1;
+            }
+            else if (Math.Abs(m.Y - 1 - player.Y) < Math.Abs(m.Y - player.Y) && Math.Abs(m.Y - 1 - player.Y) > 0)
+            {
+                m.Y -= 1;
+            }
+        }
+
         // Reads console input
         public void ExecuteCommand(ConsoleKeyInfo command)
         {
@@ -148,15 +183,16 @@ namespace Roguelike
             if (IsMobNear(player.X, player.Y, ref nothing))
             {
                 Console.SetCursorPosition(xTitle, yTitle);
-                Console.WriteLine("Press the space to fight");
+                Console.WriteLine("Press the space to fight     ");
             }
             if (IsMobNear(player.X, player.Y, ref nothing))
             {
                 Console.SetCursorPosition(xTitle, yTitle);
-                Console.WriteLine("Press the space to fight");
+                Console.WriteLine("Press the space to fight     ");
             }
             SetMapTiles();
         }
+
         // Player Movement
         public void GetNewLocation(ConsoleKeyInfo command, Point move)
         {
@@ -200,7 +236,7 @@ namespace Roguelike
                 player.Hits += bandages[positionOfCreature].Hits;
                 bandages.RemoveAt(positionOfCreature);
                 Console.SetCursorPosition(xTitle, yTitle);
-                Console.Write("Health points increased!                 ");
+                Console.Write("Health points increased!                    ");
             }
         }
 
@@ -259,13 +295,29 @@ namespace Roguelike
                 {
                     monsters.RemoveAt(numberOfMonster);
                     player.Hits += 1;
-                    Console.Write("Great job!                  ");
+                    Console.Write("      Great job!                 ");
                 }
             }
             else
             {
-                Console.Write("There's no one around!");
+                Console.Write("There's no one around!               ");
             }
+        }
+
+        public void CreateNewLevel(Map lastMap, string name)
+        {
+            Console.SetCursorPosition(xTitle, yTitle);
+            Thread.Sleep(1000);
+            Console.Clear();
+            Console.SetCursorPosition(22, 0);
+            Console.WriteLine("Хорош, {0}, но это не всё...", name);
+            if(player.Hits < 5)
+            {
+                player.Hits = 5;
+            }
+            Thread.Sleep(3000);
+            Console.Clear();
+            SpawnMobsAndBandages();
         }
 
         public void Refresh()
