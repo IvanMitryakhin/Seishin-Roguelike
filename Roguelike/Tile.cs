@@ -1,13 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Roguelike
 {
     public class Tile
     {
+        protected Random r = new Random();
         public string name { get; set; }
         public char ImageCharacter { get; set; }
         public ConsoleColor Color { get; set; }
@@ -38,10 +35,6 @@ namespace Roguelike
     public class Creature : Tile
     {
         public int Hits { get; set; }
-        public void Die()
-        {
-            Hits = 0;
-        }
     }
 
     public class Player : Creature
@@ -52,7 +45,7 @@ namespace Roguelike
             Color = Constants.PlayerColor;
             X = p.X;
             Y = p.Y;
-            Hits = 10;
+            Hits = 5;
         }
     }
 
@@ -64,9 +57,21 @@ namespace Roguelike
             Color = Constants.MonsterColor;
             X = p.X;
             Y = p.Y;
-            Hits = 5;
+            Hits = r.Next(1,6);
         }
     }
+    public class Bandage : Creature
+    {
+        public Bandage(Point p)
+        {
+            ImageCharacter = Constants.BandageImage;
+            Color = Constants.BandageColor;
+            X = p.X;
+            Y = p.Y;
+            Hits = r.Next(1,3);
+        }
+    }
+    
 
     public struct Point
     {
