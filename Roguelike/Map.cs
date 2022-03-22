@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 
 namespace Roguelike
@@ -23,7 +21,7 @@ namespace Roguelike
         private int cameraOffsetX = 0;
         private int cameraOffsetY = 0;
         private int xTitle = 41;
-        private int yTitle = 2;
+        private int yTitle = 4;
 
         public Map() { }
 
@@ -36,7 +34,7 @@ namespace Roguelike
             this.xMax = xMax;
             this.yMax = yMax;
             Tiles = new Tile[xMax, yMax];
-            SpawnMobsAndBandages();
+            SpawnMobsAndBandages(1);
             GenerateMap();
             SetMapTiles();
         }
@@ -91,10 +89,10 @@ namespace Roguelike
                 walls.Add(right);
             }
         }
-        protected void SpawnMobsAndBandages()
+        protected void SpawnMobsAndBandages(int level)
         {
             Random r = new Random();
-            for (int i = 0; i < r.Next(3, 15); i++)
+            for (int i = 0; i < r.Next(2 + level, 12 + level); i++)
             {
                 // Ensures if mob's spawning position != player's spawning position
                 int x = r.Next(1, xMax);
@@ -113,7 +111,7 @@ namespace Roguelike
                         y = r.Next(1, yMax);
                     }
                 }
-                if(r.Next(3) < 2)
+                if(r.Next(level + 2) > 1)
                 {
                     Monster m = new Monster(new Point(x, y));
                     monsters.Add(m);
@@ -259,7 +257,8 @@ namespace Roguelike
             bool mobNear = false;
             for (int i = 0; i < monsters.Count; i++)
             {
-                mobNear = (monsters[i].X == x + 1 || monsters[i].X == x - 1) && (monsters[i].Y == y) || (monsters[i].Y == y - 1 || monsters[i].Y == y + 1) && (monsters[i].X == x);
+                mobNear = (Math.Abs(monsters[i].X - x) <= 1 && Math.Abs(monsters[i].Y - y) <= 1);
+                //mobNear = (monsters[i].X == x + 1 || monsters[i].X == x - 1) && (monsters[i].Y == y) || (monsters[i].Y == y - 1 || monsters[i].Y == y + 1) && (monsters[i].X == x);
                 if (mobNear)
                 {
                     numberOfCurrentMob = i;
@@ -304,20 +303,17 @@ namespace Roguelike
             }
         }
 
-        public void CreateNewLevel(Map lastMap, string name)
+        public void CreateNewLevel(Map lastMap, string name, int level)
         {
             Console.SetCursorPosition(xTitle, yTitle);
             Thread.Sleep(1000);
             Console.Clear();
             Console.SetCursorPosition(22, 0);
             Console.WriteLine("Хорош, {0}, но это не всё...", name);
-            if(player.Hits < 5)
-            {
-                player.Hits = 5;
-            }
+            player.Hits = 5;
             Thread.Sleep(3000);
             Console.Clear();
-            SpawnMobsAndBandages();
+            SpawnMobsAndBandages(level);
         }
 
         public void Refresh()

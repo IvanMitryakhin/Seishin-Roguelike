@@ -19,8 +19,8 @@ namespace Roguelike
             Greeting hello = new Greeting();
             while(true)
             {
-                //Console.BackgroundColor = ConsoleColor.White;
-                PlayTheGame(hello.nameOfPlayer);
+                int level = 1;
+                PlayTheGame(hello.nameOfPlayer, level);
                 Console.Clear();
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("В этот раз народ Rogue оказался сильнее, но у тебя есть ещё один шанс...");
@@ -29,7 +29,7 @@ namespace Roguelike
             }
         }
 
-        static void PlayTheGame(string nameOfPlayer)
+        static void PlayTheGame(string nameOfPlayer, int level)
         {
             Map map = new Map(mapWidth, mapHeight);
             while (map.IsGameActive)
@@ -38,6 +38,8 @@ namespace Roguelike
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.SetCursorPosition(33, 0);
                 Console.Write("Kill all the enemies and collect bandages");
+                Console.SetCursorPosition(48, 2);
+                Console.Write("Level: {0}", level);
                 Console.SetCursorPosition(24, 34);
                 Console.Write("HP: {0} ", map.player.Hits);
                 Console.SetCursorPosition(50, 34);
@@ -48,7 +50,8 @@ namespace Roguelike
                 }
                 else if(map.bandages.Count == 0)
                 {
-                    map.CreateNewLevel(map, nameOfPlayer);
+                    level++;
+                    map.CreateNewLevel(map, nameOfPlayer, level);
                 }
                 Console.SetCursorPosition(0, 34);
                 Console.Write("Key input > ");
