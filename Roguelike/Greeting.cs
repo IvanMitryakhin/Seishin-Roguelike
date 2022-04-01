@@ -5,7 +5,7 @@ namespace Roguelike
 {
     public class Greeting
     {
-        private string nameOfGame = "Рогалик за день";
+        private string nameOfGame = "Рогалик: начало";
         private string description = "Когда-то давно 4 расы рогаликов жили в мире. Но народ rogue развязал войну";
         public string nameOfPlayer;
 
@@ -18,16 +18,6 @@ namespace Roguelike
             Console.WriteLine("Удар: space");
         }
 
-        private void Naming(string name)
-        {
-            nameOfPlayer = name;
-            Console.WriteLine("Давай начнём, {0}...", nameOfPlayer);
-            Thread.Sleep(2000);
-            Console.WriteLine(description);
-            Thread.Sleep(3000);
-            Console.Clear();
-        }
-
         private void Start()
         {
             Console.ForegroundColor = ConsoleColor.White;
@@ -35,6 +25,16 @@ namespace Roguelike
             Console.WriteLine(nameOfGame);
             Console.Write("Выберите имя своему рогалику:  ");
             Naming(Console.ReadLine());
+        }
+
+        private void Naming(string name)
+        {
+            nameOfPlayer = name;
+            Console.WriteLine("Давай начнём, {0}...", nameOfPlayer);
+            //Thread.Sleep(2000);
+            Console.WriteLine(description);
+            //Thread.Sleep(3000);
+            Console.Clear();
         }
 
     }

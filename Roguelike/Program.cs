@@ -17,14 +17,10 @@ namespace Roguelike
             Console.CursorVisible = false;
 
             Greeting hello = new Greeting();
-            while(true)
+            while (true)
             {
                 int level = 1;
                 PlayTheGame(hello.nameOfPlayer, level);
-                Console.Clear();
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("В этот раз народ Rogue оказался сильнее, но у тебя есть ещё один шанс...");
-                Thread.Sleep(3000);
                 Console.Clear();
             }
         }
@@ -44,15 +40,15 @@ namespace Roguelike
                 Console.Write("HP: {0} ", map.player.Hits);
                 Console.SetCursorPosition(50, 34);
                 Console.Write("Monsters: {0}, Bandages: {1}", map.monsters.Count, map.bandages.Count);
-                if (map.monsters.Count > 0)
-                {
-                    map.MonstersActivity();
-                }
-                else if(map.bandages.Count == 0)
-                {
-                    level++;
-                    map.CreateNewLevel(map, nameOfPlayer, level);
-                }
+                //if (map.monsters.Count > 0)
+                //{
+                //    map.MonstersActivity();
+                //}
+                //else if (map.bandages.Count == 0)
+                //{
+                //    level++;
+                //    map.CreateNewLevel(map, nameOfPlayer, level);
+                //}
                 Console.SetCursorPosition(0, 34);
                 Console.Write("Key input > ");
                 map.ExecuteCommand(Console.ReadKey());
