@@ -10,8 +10,10 @@ namespace Roguelike
         public List<Wall> walls;
         public List<Monster> monsters;
         public List<Bandage> bandages;
+        public List<Thing> things;
 
         public Player player = new Player(new Point(15, 15));
+        public Inventory inventory = new Inventory();
 
         private int xMaxScreen = 30;
         private int yMaxScreen = 30;
@@ -19,16 +21,52 @@ namespace Roguelike
         private int yMax;
         private int cameraOffsetX = 0;
         private int cameraOffsetY = 0;
-        private int xTitle = 41;
-        private int yTitle = 4;
 
-        public Map() { }
+        private Dictionary<int, Func<Point, Thing>> _types =
+        new Dictionary<int, Func<Point, Thing>>
+        {
+            { 0, CreateKatana },
+            { 1, CreateNunchucks },
+            { 2, CreateFireball },
+            { 3, CreateShuriken },
+            { 4, CreateRage },
+            { 5, CreateRadiusExpansion },
+        };
+
+        private static Thing CreateKatana(Point p)
+        {
+            return new Weapon(p, 3, 3, Constants.KatanaImage, Constants.KatanaColor);
+        }
+        private static Thing CreateNunchucks(Point p)
+        {
+            return new Weapon(p, 2, 4, Constants.NunchucksImage, Constants.NunchucksColor);
+        }
+        private static Thing CreateFireball(Point p)
+        {
+            return new Weapon(p, 3, 5, Constants.FireballImage, Constants.FireballColor);
+        }
+        private static Thing CreateShuriken(Point p)
+        {
+            return new Weapon(p, 2, 7, Constants.ShurikenImage, Constants.ShurikenColor);
+        }
+        private static Thing CreateRage(Point p)
+        {
+            return new Rage(p);
+        }
+        private static Thing CreateRadiusExpansion(Point p)
+        {
+            return new RadiusExpansion(p);
+        }
+
+
+    public Map() { }
 
         public Map(int xMax, int yMax)
         {
             walls = new List<Wall>();
             monsters = new List<Monster>();
             bandages = new List<Bandage>();
+            things = new List<Thing>();
 
             this.xMax = xMax;
             this.yMax = yMax;
@@ -40,7 +78,6 @@ namespace Roguelike
         // All about generating objects, tiles, etc.
         private void GenerateMap()
         {
-            Random r = new Random();
             for (int i = 0; i < xMax; i++)
             {
                 Wall top = new Wall(i, 0);
@@ -61,6 +98,7 @@ namespace Roguelike
             SpawnPlayer();
             SpawnBuildings();
             SpawnMobsAndBandages(1);
+            SpawnThings();
             SetAllMapObjectsToTiles();
         }
 
@@ -76,6 +114,36 @@ namespace Roguelike
 
         }
 
+        private void SpawnThings()
+        {
+            Random r = new Random();
+            for (int i = 0; i < 10; i++)
+            {
+                Point startPoint = CreateRandomPoint(xMax, yMax);
+                if (!Tiles[startPoint.X, startPoint.Y].IsFree)
+                {
+                    while (!Tiles[startPoint.X, startPoint.Y].IsFree)
+                    {
+                        startPoint = CreateRandomPoint(xMax, yMax);
+                    }
+                }
+                
+                things.Add(_types[r.Next(6)](startPoint));
+            }
+        }
+
+        private void ChooseRandomPotion()
+        {
+
+        }
+
+        private Point CreateRandomPoint(int xMaxValue, int yMaxValue)
+        {
+            Random r = new Random();
+            Point randomPoint = new Point(r.Next(2, xMaxValue), r.Next(2, yMaxValue));
+            return randomPoint;
+        }
+
         private void SpawnPlayer()
         {
             Tiles[player.X, player.Y] = player;
@@ -87,6 +155,7 @@ namespace Roguelike
             walls.ForEach(w => Tiles[w.X, w.Y] = w);
             monsters.ForEach(m => Tiles[m.X, m.Y] = m);
             bandages.ForEach(b => Tiles[b.X, b.Y] = b);
+            things.ForEach(t => Tiles[t.X, t.Y] = t);
         }
 
 
@@ -97,18 +166,18 @@ namespace Roguelike
             int randomCountOfBuilding = r.Next(7, 15);
             int numberOfBuilding;
             Building[] buildings = new Building[3];
-            buildings[0] = new House();
-            buildings[1] = new Warehouse();
-            buildings[2] = new Palace();
+            buildings[0] = new Building(11, 5, "house");//House
+            buildings[1] = new Building(8, 4, "warehouse");//Warehouse
+            buildings[2] = new Building(11, 5, "palace");//Palace
 
             while (countOfBuildings < randomCountOfBuilding)
             {
-                Point startPoint = new Point(r.Next(1, xMax), r.Next(1, yMax));
+                Point startPoint = CreateRandomPoint(xMax, yMax);
                 numberOfBuilding = r.Next(3);
 
                 if (CheckingForPossibilityOfConstruction(startPoint, buildings[numberOfBuilding].length, buildings[numberOfBuilding].height))
                 {
-                    buildings[numberOfBuilding].SetBuildingtFromTextFile(buildings[numberOfBuilding].GetType(), startPoint, Tiles);
+                    buildings[numberOfBuilding].SetBuildingtFromTextFile(buildings[numberOfBuilding].Type, startPoint, Tiles);
                     countOfBuildings++;
                 }
 
@@ -144,29 +213,45 @@ namespace Roguelike
         private void SpawnMobsAndBandages(int level)
         {
             Random r = new Random();
-            for (int i = 0; i < r.Next(2 + level, 12 + level); i++)
+            for (int i = 0; i < r.Next(10 + level, 12 + level); i++)
             {
                 // Ensures if mob's spawning position occupied position
-                int x = r.Next(1, xMax);
-                int y = r.Next(1, yMax);
-                if (!Tiles[x, y].IsFree)
+                Point startPoint = CreateRandomPoint(xMax, yMax);
+                if (!Tiles[startPoint.X, startPoint.Y].IsFree)
                 {
-                    while (!Tiles[x, y].IsFree)
+                    while (!Tiles[startPoint.X, startPoint.Y].IsFree)
                     {
-                        x = r.Next(1, xMax);
-                        y = r.Next(1, yMax);
+                        startPoint = CreateRandomPoint(xMax, yMax);
                     }
                 }
 
-                if (r.Next(level + 2) > 1)
+                if (r.Next(level + 5) > 1)
                 {
-                    Monster m = new Monster(new Point(x, y));
-                    monsters.Add(m);
+                    char image;
+                    ConsoleColor color;
+
+                    if (r.Next(2) == 0)
+                    {
+                        image = Constants.CloseCombatMonsterImage;
+                        color = Constants.CloseCombatMonsterColor;
+                        //create close combat with Katana and Nunchucks
+                        Monster closeCombatMonster = new Monster(startPoint, image, color, 3, (Weapon)_types[0](startPoint), (Weapon)_types[1](startPoint));
+                        monsters.Add(closeCombatMonster);
+                    }
+                    else
+                    {
+                        image = Constants.DistantCombatMonsterImage;
+                        color = Constants.DistantCombatMonsterColor;
+                        //create distant combat with Fireball and Shuriken
+                        Monster distantCombatMonster = new Monster(startPoint, image, color, 5, (Weapon)_types[2](startPoint), (Weapon)_types[3](startPoint));
+                        monsters.Add(distantCombatMonster);
+                    }
+
                 }
                 else
                 {
                     Console.Beep();
-                    Bandage b = new Bandage(new Point(x, y));
+                    Bandage b = new Bandage(startPoint);
                     bandages.Add(b);
                 }
             }
@@ -183,21 +268,51 @@ namespace Roguelike
                 case ConsoleKey.D:
                     GetNewLocation(command, new Point(player.X, player.Y));
                     break;
+                case ConsoleKey.Spacebar:
+                    HitTheMonster();
+                    break;
+                case ConsoleKey.E:
+                    Point coordinatesOfThing = new Point();
+                    if(IsThingNear(player.X, player.Y, coordinatesOfThing))
+                    {
+                        inventory.Pick((Thing)Tiles[coordinatesOfThing.X, coordinatesOfThing.Y]);
+                        RemoveThing(coordinatesOfThing);
+                    }                   
+                    break;
             }
             int nothing = -1;
             if (IsMobNear(player.X, player.Y, ref nothing))
             {
-                Console.SetCursorPosition(xTitle, yTitle);
-                Console.WriteLine("Press the space to fight     ");
+                MessageGenerator.WriteSomeMessage(1);
             }
 
         }
 
+        private void RemoveThing(Point coordinates)
+        {
+            Tiles[coordinates.X, coordinates.Y] = new Floor(coordinates.X, coordinates.Y);
+        }
+
+        private bool IsThingNear(int x, int y, Point coordinates)
+        {
+            for(int i = x - 1; i <= x + 1; i++)
+            {
+                for(int j = y - 1; j <= y + 1; j++)
+                {
+                    if(Tiles[i,j] is Thing)
+                    {
+                        coordinates.X = i;
+                        coordinates.Y = j;
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
         // Player Movement
         private void GetNewLocation(ConsoleKeyInfo command, Point move)
         {
-            Console.SetCursorPosition(xTitle, yTitle);
-            Console.Write("                         ");
+            MessageGenerator.WriteSomeMessage(0);
             switch (command.Key)
             {
                 case ConsoleKey.W:
@@ -228,8 +343,8 @@ namespace Roguelike
             if (!IsInvalidMove(move.X, move.Y))
             {
                 Tiles[player.X, player.Y].IsFree = true;
-                Tiles[player.X, player.Y].ImageCharacter = Constants.TileImage;
-                Tiles[player.X, player.Y].Color = Constants.TileColor;
+                Tiles[player.X, player.Y].ImageCharacter = Constants.FloorImage;
+                Tiles[player.X, player.Y].Color = Constants.FloorColor;
                 player.X = move.X;
                 player.Y = move.Y;
                 Tiles[player.X, player.Y].IsFree = false;
@@ -246,35 +361,88 @@ namespace Roguelike
             if (IsBandageNear(player.X, player.Y, ref numberInList))
             {
                 DestructionOfBandage(player, numberInList);
-                Console.SetCursorPosition(xTitle, yTitle);
-                Console.Write("Health points increased!                    ");
+                MessageGenerator.WriteSomeMessage(2);
             }
         }
 
         private void DestructionOfBandage(Creature monsterOrPlayer, int numberOfCurrentBandage)
         {
             Point coordinatesBandage = new Point(bandages[numberOfCurrentBandage].X, bandages[numberOfCurrentBandage].Y);
-            monsterOrPlayer.Hits += bandages[numberOfCurrentBandage].Hits;
-            Tiles[coordinatesBandage.X, coordinatesBandage.Y].ImageCharacter = Constants.TileImage;
-            Tiles[coordinatesBandage.X, coordinatesBandage.Y].Color = Constants.TileColor;
+            monsterOrPlayer.Hits += 1;
+            Tiles[coordinatesBandage.X, coordinatesBandage.Y].ImageCharacter = Constants.FloorImage;
+            Tiles[coordinatesBandage.X, coordinatesBandage.Y].Color = Constants.FloorColor;
+            Tiles[coordinatesBandage.X, coordinatesBandage.Y].IsFree = true;
             bandages.RemoveAt(numberOfCurrentBandage);
         }
 
-        // Monsters movement
-        public void MonstersActivity()
+        //Monsters movement
+        public void MonstersActivity(Map map)
         {
             foreach (Monster m in monsters)
             {
-                MonstersApproach(m);
+                //MonstersApproach(m);
+                MonstersKick(map, m);
                 int positionOfCreature = -1;
                 if (IsBandageNear(m.X, m.Y, ref positionOfCreature))
                 {
                     DestructionOfBandage(m, positionOfCreature);
-                    Console.SetCursorPosition(xTitle, yTitle);
-                    Console.Write("The bandage is lost(         ");
+                    MessageGenerator.WriteSomeMessage(3);
                 }
             }
             //Thread.Sleep(100);
+        }
+
+        private void MonstersKick(Map map, Monster monster)
+        {
+            int horizontalDistance = player.X - monster.X;
+            int verticalDistance = player.Y - monster.Y;
+            char directionOptionForFirstgun = IsDirectionAcceptable(monster, monster.firstgun.RadiusOfApplication, horizontalDistance, verticalDistance);
+            char directionOptionForSecondgun = IsDirectionAcceptable(monster, monster.secondgun.RadiusOfApplication, horizontalDistance, verticalDistance);
+
+            if(directionOptionForFirstgun == 'X' || directionOptionForFirstgun == 'Y')
+            {
+                char image = monster.firstgun.ImageCharacter;
+                ConsoleColor color = monster.firstgun.Color;
+                monster.firstgun.DealDamage(map, Tiles, player, monster, directionOptionForFirstgun, image, color);
+            }
+            else if (directionOptionForSecondgun == 'X' || directionOptionForSecondgun == 'Y')
+            {
+                char image = monster.secondgun.ImageCharacter;
+                ConsoleColor color = monster.secondgun.Color;
+                monster.secondgun.DealDamage(map, Tiles, player, monster, directionOptionForSecondgun, image, color);
+            }
+        }
+
+        private char IsDirectionAcceptable(Monster monster, int radiusOfDamage, int horizontalDistance, int verticalDistance)
+        {
+            Point checkPoint = new Point(monster.X, monster.Y);
+            if ((radiusOfDamage > Math.Abs(horizontalDistance)) && verticalDistance == 0)
+            {
+                while(checkPoint.X != player.X)
+                {
+                    checkPoint.X = checkPoint.X + Math.Sign(horizontalDistance) * 1;
+                    horizontalDistance = horizontalDistance - Math.Sign(horizontalDistance) * 1;
+                    if(Tiles[checkPoint.X,checkPoint.Y].ImageCharacter != Constants.FloorImage && Tiles[checkPoint.X, checkPoint.Y].ImageCharacter != Constants.PlayerImage)
+                    {
+                        return 'N';
+                    }
+                }
+                return 'Y';
+            }
+            else if((radiusOfDamage > Math.Abs(verticalDistance)) && horizontalDistance == 0)
+            {
+                while (checkPoint.Y != player.Y)
+                {
+                    checkPoint.Y = checkPoint.Y + Math.Sign(verticalDistance) * 1;
+                    verticalDistance = verticalDistance - Math.Sign(verticalDistance) * 1;
+                    if (Tiles[checkPoint.X, checkPoint.Y].ImageCharacter != Constants.FloorImage && Tiles[checkPoint.X, checkPoint.Y].ImageCharacter != Constants.PlayerImage)
+                    {
+                        return 'N';
+                    }
+                }
+                return 'X';
+            }
+            return 'N';
         }
 
         private void MonstersApproach(Monster m)
@@ -299,24 +467,29 @@ namespace Roguelike
 
         private void HitTheMonster()
         {
-            Console.SetCursorPosition(xTitle, yTitle);
             int numberOfMonster = -1;
             if (IsMobNear(player.X, player.Y, ref numberOfMonster))
             {
                 monsters[numberOfMonster].Hits -= 1;
                 if (monsters[numberOfMonster].Hits == 0)
                 {
-                    monsters.RemoveAt(numberOfMonster);
+                    RemoveMonster(numberOfMonster);
                     player.Hits += 1;
-                    Console.Write("      Great job!                 ");
+                    MessageGenerator.WriteSomeMessage(4);
                 }
             }
             else
             {
-                Console.Write("There's no one around!               ");
+                MessageGenerator.WriteSomeMessage(5);
             }
         }
-
+        private void RemoveMonster(int number)
+        {
+            int x = monsters[number].X;
+            int y = monsters[number].Y;
+            Tiles[x, y] = new Floor(x, y);
+            monsters.RemoveAt(number);
+        }
         // All checks
         private bool IsInvalidMove(int x, int y)
         {
@@ -338,7 +511,6 @@ namespace Roguelike
             for (int i = 0; i < monsters.Count; i++)
             {
                 mobNear = (Math.Abs(monsters[i].X - x) <= 1 && Math.Abs(monsters[i].Y - y) <= 1);
-                //mobNear = (monsters[i].X == x + 1 || monsters[i].X == x - 1) && (monsters[i].Y == y) || (monsters[i].Y == y - 1 || monsters[i].Y == y + 1) && (monsters[i].X == x);
                 if (mobNear)
                 {
                     numberOfCurrentMob = i;
@@ -364,13 +536,12 @@ namespace Roguelike
         }
 
         // All updates
-        public void CreateNewLevel(Map lastMap, string name, int level)
+        public void CreateNewLevel(Map lastMap, int level)
         {
-            Console.SetCursorPosition(xTitle, yTitle);
             Thread.Sleep(1000);
             Console.Clear();
             Console.SetCursorPosition(22, 0);
-            Console.WriteLine("{0}, this is not the end... a", name);
+            Console.WriteLine("This is not the end...           ");
             player.Hits = 5;
             Thread.Sleep(3000);
             Console.Clear();
@@ -399,7 +570,7 @@ namespace Roguelike
                 }
                 Console.WriteLine();
             }
-            Console.SetCursorPosition(xTitle, yTitle);
+            //Console.SetCursorPosition(xTitle, yTitle);
         }
 
         public bool IsGameActive

@@ -1,32 +1,29 @@
 ﻿using System;
 using System.Threading;
 using System.IO;
+using System.Collections.Generic;
 
 namespace Roguelike
 {
-    public class Tile
+    public abstract class Tile
     {
-        protected Random r = new Random();
         public char ImageCharacter { get; set; }
         public ConsoleColor Color { get; set; }
+        public bool IsFree;
         public int X { get; set; }
         public int Y { get; set; }
-        public bool IsFree;
-        public Tile() { }
 
-        public Tile(int x, int y, string t)
+        public Tile() 
         {
-            X = x;
-            Y = y;
-            ImageCharacter = Constants.TileImage;
-            Color = Constants.TileColor;
-            IsFree = true;
         }
 
-        public Tile(int x, int y)
+        public Tile(int x, int y, char image, ConsoleColor color, bool isFree)
         {
             X = x;
             Y = y;
+            ImageCharacter = image;
+            Color = color;
+            IsFree = isFree;
         }
 
     }
@@ -34,7 +31,7 @@ namespace Roguelike
     public class Floor : Tile
     {
         public Floor(int x, int y)
-            : base(x, y, "floor")
+            : base(x, y, Constants.FloorImage, Constants.FloorColor, true)
         {
         }
     }
@@ -42,7 +39,7 @@ namespace Roguelike
     public class Wall : Tile
     {
         public Wall(int x, int y)
-            : base(x, y)
+            : base(x, y, Constants.WallImage, Constants.WallColor, false)
         {
             ImageCharacter = Constants.WallImage;
             Color = Constants.WallColor;
@@ -52,59 +49,189 @@ namespace Roguelike
     abstract public class Creature : Tile
     {
         public int Hits { get; set; }
+        public Creature(Point p, char image, ConsoleColor color, bool isFree)
+            : base(p.X, p.Y, image, color, isFree)
+        {
+
+        }
     }
 
     public class Player : Creature
     {
         public Player(Point p)
-        {
-            ImageCharacter = Constants.PlayerImage;
-            Color = Constants.PlayerColor;
-            X = p.X;
-            Y = p.Y;
+            : base(p, Constants.PlayerImage, Constants.PlayerColor, false)
+        {   
             Hits = 5;
         }
     }
 
     public class Monster : Creature
     {
-        public Monster(Point p)
+        public Weapon firstgun { get; set; }
+        public Weapon secondgun { get; set; }
+
+        public Monster(Point p, char image, ConsoleColor color, int hits, Weapon firstGun, Weapon secondGun)
+           : base(p, image, color, false)
         {
-            ImageCharacter = Constants.MonsterImage;
-            Color = Constants.MonsterColor;
+            firstgun = firstGun;
+            secondgun = secondGun;
+            Hits = hits;
             X = p.X;
             Y = p.Y;
-            Hits = r.Next(1, 6);
-        }
-    }
-    public class Bandage : Creature
-    {
-        public Bandage(Point p)
-        {
-            ImageCharacter = Constants.BandageImage;
-            Color = Constants.BandageColor;
-            X = p.X;
-            Y = p.Y;
-            Hits = r.Next(1, 3);
         }
     }
 
-    abstract public class Building
+    public class Inventory
+    {
+        public List<Thing> things = new List<Thing>();
+
+        public void Pick(Thing thing)
+        {
+            things.Add(thing);
+        }
+        public void Push(Thing thing)
+        {
+            things.Remove(thing);
+        }
+        public void Apply(Thing thing)
+        {
+            
+        }
+    }
+
+    abstract public class Thing : Tile
+    {
+        public Thing(Point p, char image, ConsoleColor color)
+            : base(p.X, p.Y, image, color, false)
+        {   
+        }
+        
+    }
+
+    //this is superclass
+    abstract public class Potion : Thing
+    {
+        public Potion(Point p, char image, ConsoleColor color)
+            : base(p, image, color)
+        {
+
+        }
+        public abstract void Apply(Weapon gun);
+    }
+
+    public class Rage : Potion
+    {
+        public Rage(Point p)
+            : base(p, Constants.RageImage, Constants.RageColor)
+        {
+        }
+        //RiseDamagePoint
+        public override void Apply(Weapon gun)
+        {
+            gun.DamagePoints *= 5;
+        }
+    }
+
+    public class RadiusExpansion : Potion
+    {
+        public RadiusExpansion(Point p)
+            : base(p, Constants.RadiusExpansionImage, Constants.RadiusExpansionColor)
+        {
+        }
+        //RiseRadius
+        public override void Apply(Weapon gun)
+        {
+            gun.RadiusOfApplication *= 3;
+        }
+    }
+
+    //this is superclass
+    public class Weapon : Thing
+    {
+        public int DamagePoints { get; set; }
+        public int RadiusOfApplication { get; set; }
+
+        public Weapon(Point p, int damagePoints, int radius, char image, ConsoleColor color)
+            : base(p, image, color)
+        {
+            DamagePoints = damagePoints;
+            RadiusOfApplication = radius;
+        }
+
+        public void DealDamage(Map map, Tile[,] Tiles, Player player, Monster monster, char direction, char image, ConsoleColor color)
+        {
+            Point startPoint = new Point(monster.X, monster.Y);
+            while(startPoint.X != player.X || startPoint.Y != player.Y)
+            {
+                if(direction == 'X')
+                {
+                    if(startPoint.Y - player.Y > 0)
+                    {
+                        startPoint.Y--;
+                    }
+                    else
+                    {
+                        startPoint.Y++;
+                    }
+                }
+                else if(direction == 'Y')
+                {
+                    if(startPoint.X - player.X > 0)
+                    {
+                        startPoint.X--;
+                    }
+                    else
+                    {
+                        startPoint.X++;
+                    }
+                }
+                if(startPoint.X == player.X && startPoint.Y == player.Y)
+                {
+                    player.Hits -= DamagePoints;
+                    break;
+                }
+                StrikeAnimation(Tiles, startPoint, image, color);
+                map.Refresh();
+                //Console.Beep();
+                Thread.Sleep(1);
+                Tiles[startPoint.X, startPoint.Y].ImageCharacter = Constants.FloorImage;
+                Tiles[startPoint.X, startPoint.Y].Color = Constants.FloorColor;
+            }
+            
+        }
+
+        public void StrikeAnimation(Tile[,] Tiles, Point bulletPoint, char image, ConsoleColor color)
+        {
+            Tiles[bulletPoint.X, bulletPoint.Y].ImageCharacter = image;
+            Tiles[bulletPoint.X, bulletPoint.Y].Color = color;
+        }
+
+    } 
+
+    public class Bandage : Tile
+    {
+        public Bandage(Point p)
+            : base(p.X, p.Y, Constants.BandageImage, Constants.BandageColor, false)
+        {
+        }
+    }  
+
+    public class Building
     {
         public int length;
         public int height;
+        public string Type { get; set; }
         public Building() { }
 
-        public Building(int lengthOfBuilding, int heightOfBuildind)
+        public Building(int lengthOfBuilding, int heightOfBuildind, string type)
         {
             length = lengthOfBuilding;
             height = heightOfBuildind;
+            Type = type;
         }
 
-
-        public void SetBuildingtFromTextFile(Type type, Point startpoint, Tile[,] Tiles)
+        public void SetBuildingtFromTextFile(string nameOfBuilding, Point startpoint, Tile[,] Tiles)
         {
-            string nameOfBuilding = type.ToString().Remove(0, 10).ToLower();
             string path = $@"C:\PROJECTS!\Roguelike\Seishin-Roguelike\Roguelike\{nameOfBuilding}.txt";
             if (File.Exists(path) == false)
             {
@@ -127,8 +254,6 @@ namespace Roguelike
                         {
                             Tiles[x, y].IsFree = false;
                         }
-                        //Console.Write(Convert.ToChar(symbol) + " ");
-                        //Thread.Sleep(70);
                         x++;
                     }
                     else
@@ -143,37 +268,6 @@ namespace Roguelike
                 }
             }
         }
-    }
-
-
-    public class House : Building
-    {
-        public House(int length = 11, int height = 5)
-            : base(length, height)
-        {
-
-        }
-
-    }
-
-    public class Warehouse : Building
-    {
-        public Warehouse(int length = 8, int height = 4)
-            : base(length, height)
-        {
-
-        }
-
-    }
-
-    public class Palace : Building
-    {
-        public Palace(int length = 11, int height = 5)
-            : base(length, height)
-        {
-
-        }
-
     }
 
     public struct Point

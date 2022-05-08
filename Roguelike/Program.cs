@@ -16,42 +16,32 @@ namespace Roguelike
             Console.SetBufferSize(ScreenWidth, ScreenHeight);
             Console.CursorVisible = false;
 
-            Greeting hello = new Greeting();
+            MessageGenerator.WriteStartInfo();
             while (true)
             {
                 int level = 1;
-                PlayTheGame(hello.nameOfPlayer, level);
+                PlayTheGame(level);
                 Console.Clear();
             }
         }
 
-        static void PlayTheGame(string nameOfPlayer, int level)
+        static void PlayTheGame(int level)
         {
             Map map = new Map(mapWidth, mapHeight);
             while (map.IsGameActive)
             {
                 map.Refresh();
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.SetCursorPosition(33, 0);
-                Console.Write("Kill all the enemies and collect bandages");
-                Console.SetCursorPosition(48, 2);
-                Console.Write("Level: {0}", level);
-                Console.SetCursorPosition(24, 34);
-                Console.Write("HP: {0} ", map.player.Hits);
-                Console.SetCursorPosition(50, 34);
-                Console.Write("Monsters: {0}, Bandages: {1}", map.monsters.Count, map.bandages.Count);
-                //if (map.monsters.Count > 0)
-                //{
-                //    map.MonstersActivity();
-                //}
-                //else if (map.bandages.Count == 0)
-                //{
-                //    level++;
-                //    map.CreateNewLevel(map, nameOfPlayer, level);
-                //}
-                Console.SetCursorPosition(0, 34);
-                Console.Write("Key input > ");
+                MessageGenerator.WriteInfoAboutPlayer(map, level);
                 map.ExecuteCommand(Console.ReadKey());
+                if (map.monsters.Count > 0)
+                {
+                    map.MonstersActivity(map);
+                }
+                else if (map.bandages.Count == 0)
+                {
+                    level++;
+                    map.CreateNewLevel(map, level);
+                }
             }
         }
     }
