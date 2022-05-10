@@ -5,10 +5,10 @@ namespace Roguelike
 {
     class Program
     {
-        private const int ScreenWidth = 75;
+        private const int ScreenWidth = 150;
         private const int ScreenHeight = 35;
-        private const int mapWidth = 60;
-        private const int mapHeight = 60;
+        private const int mapWidth = 100;
+        private const int mapHeight = 100;
 
         static void Main()
         {

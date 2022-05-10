@@ -13,9 +13,8 @@ namespace Roguelike
         public List<Thing> things;
 
         public Player player = new Player(new Point(15, 15));
-        public Inventory inventory = new Inventory();
 
-        private int xMaxScreen = 30;
+        private int xMaxScreen = 40;
         private int yMaxScreen = 30;
         private int xMax;
         private int yMax;
@@ -166,9 +165,9 @@ namespace Roguelike
             int randomCountOfBuilding = r.Next(7, 15);
             int numberOfBuilding;
             Building[] buildings = new Building[3];
-            buildings[0] = new Building(11, 5, "house");//House
-            buildings[1] = new Building(8, 4, "warehouse");//Warehouse
-            buildings[2] = new Building(11, 5, "palace");//Palace
+            buildings[0] = new Building(28, 13, "house");//House
+            buildings[1] = new Building(53, 19, "warehouse");//Warehouse
+            buildings[2] = new Building(77, 20, "palace");//Palace
 
             while (countOfBuildings < randomCountOfBuilding)
             {
@@ -272,13 +271,17 @@ namespace Roguelike
                     HitTheMonster();
                     break;
                 case ConsoleKey.E:
-                    Point coordinatesOfThing = new Point();
-                    if(IsThingNear(player.X, player.Y, coordinatesOfThing))
+                    Point coordinatesOfThing = new Point(0,0);
+                    if(IsThingNear(player.X, player.Y, ref coordinatesOfThing))
                     {
-                        inventory.Pick((Thing)Tiles[coordinatesOfThing.X, coordinatesOfThing.Y]);
-                        RemoveThing(coordinatesOfThing);
-                    }                   
+                        TryToPickThing((Thing)Tiles[coordinatesOfThing.X, coordinatesOfThing.Y]);
+                        
+                    }
                     break;
+                case ConsoleKey.P:
+                    TryToPushThing();
+                    break;
+
             }
             int nothing = -1;
             if (IsMobNear(player.X, player.Y, ref nothing))
@@ -288,12 +291,64 @@ namespace Roguelike
 
         }
 
-        private void RemoveThing(Point coordinates)
+        private void RemoveThing(int xCoordinate, int yCoordinate)
         {
-            Tiles[coordinates.X, coordinates.Y] = new Floor(coordinates.X, coordinates.Y);
+            Tiles[xCoordinate, yCoordinate] = new Floor(xCoordinate, yCoordinate);
         }
 
-        private bool IsThingNear(int x, int y, Point coordinates)
+        private void TryToPushThing(bool needMessage = true)
+        {
+            if (needMessage)
+            {
+                MessageGenerator.WriteSomeMessage(9);
+            }
+            int positionInInventory = ChooseThing();
+            if (positionInInventory != 0 && !player.inventory.IsCellFree(positionInInventory))
+            {
+                player.inventory.Choose(positionInInventory);
+                Tiles[player.X, player.Y] = player.inventory.Push();
+            }
+            else if (positionInInventory != 0)
+            {
+                MessageGenerator.WriteSomeMessage(10);
+                TryToPushThing(false);
+            }
+        }
+        
+        private void TryToPickThing(Thing thing, bool needMessage = true)
+        {
+            if (needMessage)
+            {
+                MessageGenerator.WriteSomeMessage(7);
+            }
+            int positionInInventory = ChooseThing();
+            if (player.inventory.IsCellFree(positionInInventory))
+            {
+                player.inventory.Choose(positionInInventory);
+                player.inventory.Pick(thing);
+                RemoveThing(thing.X, thing.Y);
+            }
+            else if (positionInInventory != 0)
+            {
+                MessageGenerator.WriteSomeMessage(8);
+                TryToPickThing(thing, false);
+            }
+        }
+
+        private int ChooseThing()
+        {
+            ConsoleKeyInfo symbol;
+            do
+            {
+                var position = Console.GetCursorPosition();
+                symbol = Console.ReadKey();
+                Console.SetCursorPosition(position.Left, position.Top);
+            }
+            while (symbol.KeyChar < 48 || symbol.KeyChar > 57);
+            return symbol.KeyChar - 48;
+        }
+
+        private bool IsThingNear(int x, int y, ref Point coordinates)
         {
             for(int i = x - 1; i <= x + 1; i++)
             {
@@ -323,7 +378,7 @@ namespace Roguelike
                     break;
                 case ConsoleKey.S:
                     move.Y += 1;
-                    if (cameraOffsetY + 1 <= yMaxScreen && !IsInvalidMove(move.X, move.Y))
+                    if (cameraOffsetY + 1 <= (yMax - yMaxScreen) && !IsInvalidMove(move.X, move.Y))
                         if (move.Y > 15)
                             cameraOffsetY += 1;
                     break;
@@ -335,7 +390,7 @@ namespace Roguelike
                     break;
                 case ConsoleKey.D:
                     move.X += 1;
-                    if (cameraOffsetX + 1 <= xMaxScreen && !IsInvalidMove(move.X, move.Y))
+                    if (cameraOffsetX + 1 <= (xMax - xMaxScreen) && !IsInvalidMove(move.X, move.Y))
                         if (move.X > 15)
                             cameraOffsetX += 1;
                     break;
@@ -570,7 +625,6 @@ namespace Roguelike
                 }
                 Console.WriteLine();
             }
-            //Console.SetCursorPosition(xTitle, yTitle);
         }
 
         public bool IsGameActive

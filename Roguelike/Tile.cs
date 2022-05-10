@@ -58,6 +58,7 @@ namespace Roguelike
 
     public class Player : Creature
     {
+        public Inventory inventory = new Inventory();
         public Player(Point p)
             : base(p, Constants.PlayerImage, Constants.PlayerColor, false)
         {   
@@ -83,19 +84,33 @@ namespace Roguelike
 
     public class Inventory
     {
-        public List<Thing> things = new List<Thing>();
+        //List<Thing> things = new List<Thing>();
+        Thing[] things = new Thing[10];
+        int header { get; set; }
 
         public void Pick(Thing thing)
         {
-            things.Add(thing);
+            things[header] = thing;
         }
-        public void Push(Thing thing)
+        public Thing Push()
         {
-            things.Remove(thing);
+            Thing thingToReturn = things[header];
+            things[header] = null;
+            return thingToReturn;
         }
-        public void Apply(Thing thing)
+        public void Choose(int number)
         {
-            
+            header = number;
+        }
+        public bool IsCellFree(int number)
+        {
+            if (number == 0 || things[number] is Thing)
+                return false;
+            return true;
+        }
+        public void GetInfoAboutThings()
+        {
+
         }
     }
 
@@ -250,7 +265,7 @@ namespace Roguelike
                     if (symbol != 10 && symbol != 13)
                     {
                         Tiles[x, y].ImageCharacter = Convert.ToChar(symbol);
-                        if (symbol == 42)
+                        if (symbol != 46)
                         {
                             Tiles[x, y].IsFree = false;
                         }
