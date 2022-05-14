@@ -3,7 +3,7 @@ using System.Threading;
 
 namespace Roguelike
 {
-    class Program
+    class GameStartPoint
     {
         private const int ScreenWidth = 150;
         private const int ScreenHeight = 35;
@@ -21,26 +21,31 @@ namespace Roguelike
             {
                 int level = 1;
                 PlayTheGame(level);
+                MessageGenerator.WriteEndLevel(16);
+                Thread.Sleep(3000);
                 Console.Clear();
             }
         }
 
         static void PlayTheGame(int level)
         {
+            GraphicsEngine.cameraOffsetX = 0;
+            GraphicsEngine.cameraOffsetX = 0;
             Map map = new Map(mapWidth, mapHeight);
             while (map.IsGameActive)
             {
-                map.Refresh();
+                GraphicsEngine.Refresh(map);
                 MessageGenerator.WriteInfoAboutPlayer(map, level);
                 map.ExecuteCommand(Console.ReadKey());
-                if (map.monsters.Count > 0)
+                if (map.monsters.Count > 0)//>
                 {
                     map.MonstersActivity(map);
                 }
-                else if (map.bandages.Count == 0)
+                else if (map.bandages.Count == 0)//==
                 {
                     level++;
-                    map.CreateNewLevel(map, level);
+                    map.CreateNewLevel(level);
+                    MessageGenerator.WriteInfoAboutPlayer(map, level);
                 }
             }
         }

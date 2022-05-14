@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading;
 using System.IO;
-using System.Collections.Generic;
 
 namespace Roguelike
 {
@@ -59,10 +58,13 @@ namespace Roguelike
     public class Player : Creature
     {
         public Inventory inventory = new Inventory();
+        public Thing ThingInHand { get; set; }
+
         public Player(Point p)
             : base(p, Constants.PlayerImage, Constants.PlayerColor, false)
-        {   
+        {
             Hits = 5;
+            ThingInHand = null;
         }
     }
 
@@ -80,11 +82,22 @@ namespace Roguelike
             X = p.X;
             Y = p.Y;
         }
+
+        public Weapon LeaveWeapon(int numberOfGun)
+        {
+            if (numberOfGun % 2 == 0)
+            {
+                return firstgun;
+            }
+            else
+            {
+                return secondgun;
+            }
+        }
     }
 
     public class Inventory
     {
-        //List<Thing> things = new List<Thing>();
         Thing[] things = new Thing[10];
         int header { get; set; }
 
@@ -100,17 +113,32 @@ namespace Roguelike
         }
         public void Choose(int number)
         {
-            header = number;
+            header = number - 1;
         }
         public bool IsCellFree(int number)
         {
-            if (number == 0 || things[number] is Thing)
+            if (number == 0 || things[number - 1] is Thing)
                 return false;
             return true;
         }
-        public void GetInfoAboutThings()
+        public void GetInventoryState()
         {
-
+            string image = "free ";
+            Console.SetCursorPosition(15, 34);
+            Console.Write("                                                                           ");
+            Console.SetCursorPosition(15, 34);
+            for (int i = 0; i < 9; i++)
+            {
+                Console.Write("{0}- ", i + 1);
+                if (things[i] != null)
+                {
+                    Console.Write(things[i].ImageCharacter.ToString() + " ");
+                }
+                else
+                {
+                    Console.Write(image);
+                }
+            }
         }
     }
 
@@ -206,7 +234,7 @@ namespace Roguelike
                     break;
                 }
                 StrikeAnimation(Tiles, startPoint, image, color);
-                map.Refresh();
+                GraphicsEngine.Refresh(map);
                 //Console.Beep();
                 Thread.Sleep(1);
                 Tiles[startPoint.X, startPoint.Y].ImageCharacter = Constants.FloorImage;
@@ -215,7 +243,7 @@ namespace Roguelike
             
         }
 
-        public void StrikeAnimation(Tile[,] Tiles, Point bulletPoint, char image, ConsoleColor color)
+        public static void StrikeAnimation(Tile[,] Tiles, Point bulletPoint, char image, ConsoleColor color)
         {
             Tiles[bulletPoint.X, bulletPoint.Y].ImageCharacter = image;
             Tiles[bulletPoint.X, bulletPoint.Y].Color = color;
@@ -245,7 +273,7 @@ namespace Roguelike
             Type = type;
         }
 
-        public void SetBuildingtFromTextFile(string nameOfBuilding, Point startpoint, Tile[,] Tiles)
+        public static void SetBuildingtFromTextFile(string nameOfBuilding, Point startpoint, Tile[,] Tiles)
         {
             string path = $@"C:\PROJECTS!\Roguelike\Seishin-Roguelike\Roguelike\{nameOfBuilding}.txt";
             if (File.Exists(path) == false)

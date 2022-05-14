@@ -11,15 +11,10 @@ namespace Roguelike
         public List<Monster> monsters;
         public List<Bandage> bandages;
         public List<Thing> things;
+        public Player player;
 
-        public Player player = new Player(new Point(15, 15));
-
-        private int xMaxScreen = 40;
-        private int yMaxScreen = 30;
         private int xMax;
         private int yMax;
-        private int cameraOffsetX = 0;
-        private int cameraOffsetY = 0;
 
         private Dictionary<int, Func<Point, Thing>> _types =
         new Dictionary<int, Func<Point, Thing>>
@@ -62,6 +57,7 @@ namespace Roguelike
 
         public Map(int xMax, int yMax)
         {
+            player = new Player(new Point(18, 16));
             walls = new List<Wall>();
             monsters = new List<Monster>();
             bandages = new List<Bandage>();
@@ -176,7 +172,7 @@ namespace Roguelike
 
                 if (CheckingForPossibilityOfConstruction(startPoint, buildings[numberOfBuilding].length, buildings[numberOfBuilding].height))
                 {
-                    buildings[numberOfBuilding].SetBuildingtFromTextFile(buildings[numberOfBuilding].Type, startPoint, Tiles);
+                    Building.SetBuildingtFromTextFile(buildings[numberOfBuilding].Type, startPoint, Tiles);
                     countOfBuildings++;
                 }
 
@@ -270,16 +266,28 @@ namespace Roguelike
                 case ConsoleKey.Spacebar:
                     HitTheMonster();
                     break;
-                case ConsoleKey.E:
-                    Point coordinatesOfThing = new Point(0,0);
-                    if(IsThingNear(player.X, player.Y, ref coordinatesOfThing))
+                case ConsoleKey.C://catch thung in hand
+                    Point coordinatesOfThing = new Point(0, 0);
+                    if (IsThingNear(player.X, player.Y, ref coordinatesOfThing))
                     {
-                        TryToPickThing((Thing)Tiles[coordinatesOfThing.X, coordinatesOfThing.Y]);
-                        
+                        TryToPickThingInHand((Thing)Tiles[coordinatesOfThing.X, coordinatesOfThing.Y]);
+                    }
+                    else
+                    {
+                        MessageGenerator.WriteSomeMessage(14);
                     }
                     break;
-                case ConsoleKey.P:
-                    TryToPushThing();
+                case ConsoleKey.P: //push in inventory
+                    TryToPickThingInInventory();
+                    break;
+                case ConsoleKey.T://take from inventory to hand
+                    TryToPushThingInHand();
+                    break;
+                case ConsoleKey.E://eject from hand on map
+                    EjectThingOnMap();
+                    break;
+                case ConsoleKey.I:
+                    player.inventory.GetInventoryState();
                     break;
 
             }
@@ -296,46 +304,154 @@ namespace Roguelike
             Tiles[xCoordinate, yCoordinate] = new Floor(xCoordinate, yCoordinate);
         }
 
-        private void TryToPushThing(bool needMessage = true)
+
+        //method to implement in the future
+        private void ApplyThing()
         {
-            if (needMessage)
+            if (player.ThingInHand == null)
             {
-                MessageGenerator.WriteSomeMessage(9);
+                HitTheMonster();
             }
-            int positionInInventory = ChooseThing();
-            if (positionInInventory != 0 && !player.inventory.IsCellFree(positionInInventory))
+            else
             {
-                player.inventory.Choose(positionInInventory);
-                Tiles[player.X, player.Y] = player.inventory.Push();
-            }
-            else if (positionInInventory != 0)
-            {
-                MessageGenerator.WriteSomeMessage(10);
-                TryToPushThing(false);
+                if (player.ThingInHand is Weapon)
+                {
+                    Weapon gun = ((Weapon)player.ThingInHand);
+                    //Monster monster = new Monster(Constants.CloseCombatMonsterImage, Constants.CloseCombatMonsterColor);
+                    char direction = 'F';
+                    if (direction != 'F')
+                    {
+                        //((Weapon)player.ThingInHand).DealDamage(Tiles, player, monster, direction, gun.ImageCharacter, gun.Color);
+                    }
+                }
+                else //Potion
+                {
+                    ChooseWeapon();
+                    //((Potion)player.ThingInHand).Apply();
+                }
             }
         }
         
-        private void TryToPickThing(Thing thing, bool needMessage = true)
+        private void ChooseWeapon()
         {
-            if (needMessage)
+            int positionInInventory = ChooseThing();
+            player.inventory.Choose(positionInInventory);
+            //if()
+        }
+
+        //Work with things, hand and inventory
+        private void TryToPickThingInHand(Thing thing)
+        {
+            if (player.ThingInHand == null)
+            {
+                player.ThingInHand = thing;
+                RemoveThing(thing.X, thing.Y);
+            }
+            else
             {
                 MessageGenerator.WriteSomeMessage(7);
             }
-            int positionInInventory = ChooseThing();
-            if (player.inventory.IsCellFree(positionInInventory))
+        }
+
+        private void TryToPickThingInInventory()
+        {
+            if (player.ThingInHand == null)
             {
-                player.inventory.Choose(positionInInventory);
-                player.inventory.Pick(thing);
-                RemoveThing(thing.X, thing.Y);
+                MessageGenerator.WriteSomeMessage(13);
             }
-            else if (positionInInventory != 0)
+            else
             {
-                MessageGenerator.WriteSomeMessage(8);
-                TryToPickThing(thing, false);
+                MessageGenerator.WriteSomeMessage(8); // choose cell to push
+                int positionInInventory = ChooseThing();
+                player.inventory.Choose(positionInInventory);
+                if (positionInInventory != 0 && player.inventory.IsCellFree(positionInInventory))//all correct
+                {
+                    player.inventory.Pick(player.ThingInHand);
+                    player.ThingInHand = null;
+                }
+                else if (positionInInventory != 0)//cell is occupied
+                {
+                    MessageGenerator.WriteSomeMessage(9);//check mistake
+                    ConsoleKeyInfo command = Console.ReadKey();
+                    if (command.KeyChar == 121)
+                    {
+                        Exchange();
+                        Console.Beep();
+                    }
+                }
             }
         }
 
-        private int ChooseThing()
+        private void Exchange()
+        {
+            Thing thingForExchange = player.ThingInHand;
+            player.ThingInHand = player.inventory.Push();
+            player.inventory.Pick(thingForExchange);
+        }
+
+        private void TryToPushThingInHand(bool needMessage = true)
+        {
+            if (needMessage)
+            {
+                MessageGenerator.WriteSomeMessage(10);
+            }
+            int positionInInventory = ChooseThing();
+            player.inventory.Choose(positionInInventory);
+            if (positionInInventory != 0 && !player.inventory.IsCellFree(positionInInventory)) //0 or free cell
+            {
+                if (player.ThingInHand == null)
+                {
+                    player.ThingInHand = player.inventory.Push();
+                }
+                else
+                {
+                    MessageGenerator.WriteSomeMessage(12);
+                    ConsoleKeyInfo command = Console.ReadKey();
+                    if (command.KeyChar == 121)
+                    {
+                        Exchange();
+                        Console.Beep();
+                    }
+                }
+            }
+            else if (positionInInventory != 0)
+            {
+                MessageGenerator.WriteSomeMessage(11);
+                TryToPushThingInHand(false);
+            }
+        }
+
+        private void EjectThingOnMap()
+        {
+            if (player.ThingInHand != null)
+            {
+                PushingThingIntoMap(player.ThingInHand);
+                player.ThingInHand = null;
+            }
+            else
+            {
+                MessageGenerator.WriteSomeMessage(13);
+            }
+        }
+
+        private void PushingThingIntoMap(Thing thing)
+        {
+            for (int i = -1; i < 2; i++)
+            {
+                for (int j = -1; j < 2; j++)
+                {
+                    if (Tiles[i + player.X, j + player.Y].IsFree && (i != 0 || j != 0))
+                    {
+                        thing.X = i + player.X;
+                        thing.Y = j + player.Y;
+                        Tiles[i + player.X, j + player.Y] = thing;
+                        return;
+                    }
+                }
+            }
+        }
+
+        private static int ChooseThing()
         {
             ConsoleKeyInfo symbol;
             do
@@ -348,22 +464,6 @@ namespace Roguelike
             return symbol.KeyChar - 48;
         }
 
-        private bool IsThingNear(int x, int y, ref Point coordinates)
-        {
-            for(int i = x - 1; i <= x + 1; i++)
-            {
-                for(int j = y - 1; j <= y + 1; j++)
-                {
-                    if(Tiles[i,j] is Thing)
-                    {
-                        coordinates.X = i;
-                        coordinates.Y = j;
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }
         // Player Movement
         private void GetNewLocation(ConsoleKeyInfo command, Point move)
         {
@@ -372,27 +472,27 @@ namespace Roguelike
             {
                 case ConsoleKey.W:
                     move.Y -= 1;
-                    if (cameraOffsetY - 1 >= 0 && !IsInvalidMove(move.X, move.Y))
-                        if (yMax - move.Y > 15)
-                            cameraOffsetY -= 1;
+                    if (GraphicsEngine.cameraOffsetY - 1 >= 0 && !IsInvalidMove(move.X, move.Y))
+                        if (yMax - move.Y > 17)
+                            GraphicsEngine.cameraOffsetY -= 1;
                     break;
                 case ConsoleKey.S:
                     move.Y += 1;
-                    if (cameraOffsetY + 1 <= (yMax - yMaxScreen) && !IsInvalidMove(move.X, move.Y))
-                        if (move.Y > 15)
-                            cameraOffsetY += 1;
+                    if (GraphicsEngine.cameraOffsetY + 1 <= (yMax - GraphicsEngine.yMaxScreen) && !IsInvalidMove(move.X, move.Y))
+                        if (move.Y > 17)
+                            GraphicsEngine.cameraOffsetY += 1;
                     break;
                 case ConsoleKey.A:
                     move.X -= 1;
-                    if (cameraOffsetX - 1 >= 0 && !IsInvalidMove(move.X, move.Y))
-                        if (xMax - move.X > 15)
-                            cameraOffsetX -= 1;
+                    if (GraphicsEngine.cameraOffsetX - 1 >= 0 && !IsInvalidMove(move.X, move.Y))
+                        if (xMax - move.X > 17)
+                            GraphicsEngine.cameraOffsetX -= 1;
                     break;
                 case ConsoleKey.D:
                     move.X += 1;
-                    if (cameraOffsetX + 1 <= (xMax - xMaxScreen) && !IsInvalidMove(move.X, move.Y))
-                        if (move.X > 15)
-                            cameraOffsetX += 1;
+                    if (GraphicsEngine.cameraOffsetX + 1 <= (xMax - GraphicsEngine.xMaxScreen) && !IsInvalidMove(move.X, move.Y))
+                        if (move.X > 17)
+                            GraphicsEngine.cameraOffsetX += 1;
                     break;
             }
             if (!IsInvalidMove(move.X, move.Y))
@@ -575,6 +675,23 @@ namespace Roguelike
             return mobNear;
         }
 
+        private bool IsThingNear(int x, int y, ref Point coordinates)
+        {
+            for (int i = x - 1; i <= x + 1; i++)
+            {
+                for (int j = y - 1; j <= y + 1; j++)
+                {
+                    if (Tiles[i, j] is Thing)
+                    {
+                        coordinates.X = i;
+                        coordinates.Y = j;
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
         private bool IsBandageNear(int x, int y, ref int numberOfCurrentBandage)
         {
             bool bandageNear = false;
@@ -591,40 +708,15 @@ namespace Roguelike
         }
 
         // All updates
-        public void CreateNewLevel(Map lastMap, int level)
+        public void CreateNewLevel(int level)
         {
             Thread.Sleep(1000);
             Console.Clear();
-            Console.SetCursorPosition(22, 0);
-            Console.WriteLine("This is not the end...           ");
-            player.Hits = 5;
+            MessageGenerator.WriteEndLevel(15);
+            player.Hits += 5;
             Thread.Sleep(3000);
             Console.Clear();
             SpawnMobsAndBandages(level);
-        }
-
-        public void Refresh()
-        {
-            if (player.Hits < 2)
-            {
-                Tiles[player.X, player.Y].Color = ConsoleColor.Red;
-            }
-            else if (player.Hits > 1)
-            {
-                Tiles[player.X, player.Y].Color = Constants.PlayerColor;
-            }
-
-            Console.SetCursorPosition(0, 0);
-            for (int i = 0; i < yMaxScreen; i++)
-            {
-                for (int j = 0; j < xMaxScreen; j++)
-                {
-                    Console.ForegroundColor = Tiles[j + cameraOffsetX, i + cameraOffsetY].Color;
-                    Console.Write(Tiles[j + cameraOffsetX, i + cameraOffsetY].ImageCharacter);
-
-                }
-                Console.WriteLine();
-            }
         }
 
         public bool IsGameActive
