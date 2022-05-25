@@ -30,3 +30,6 @@ C:\PROJECTS!\Roguelike\Seishin-Roguelike\Roguelike\obj\Debug\net5.0\Roguelike.dl
 C:\PROJECTS!\Roguelike\Seishin-Roguelike\Roguelike\obj\Debug\net5.0\ref\Roguelike.dll
 C:\PROJECTS!\Roguelike\Seishin-Roguelike\Roguelike\obj\Debug\net5.0\Roguelike.pdb
 C:\PROJECTS!\Roguelike\Seishin-Roguelike\Roguelike\obj\Debug\net5.0\Roguelike.genruntimeconfig.cache
+C:\PROJECTS!\Roguelike\Seishin-Roguelike\Roguelike\bin\Debug\net5.0\buildings\house.txt
+C:\PROJECTS!\Roguelike\Seishin-Roguelike\Roguelike\bin\Debug\net5.0\buildings\palace.txt
+C:\PROJECTS!\Roguelike\Seishin-Roguelike\Roguelike\bin\Debug\net5.0\buildings\warehouse.txt

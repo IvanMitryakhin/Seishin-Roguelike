@@ -1,77 +1,313 @@
 ﻿using System;
+using System.Threading;
+using System.IO;
 
 namespace Roguelike
 {
-    public class Tile
+    public abstract class Tile
     {
-        protected Random r = new Random();
-        public string name { get; set; }
         public char ImageCharacter { get; set; }
         public ConsoleColor Color { get; set; }
+        public bool IsFree;
         public int X { get; set; }
         public int Y { get; set; }
-        public Tile() { }
 
-        public Tile(int x, int y)
-            : base()
+        public Tile() 
+        {
+        }
+
+        public Tile(int x, int y, char image, ConsoleColor color, bool isFree)
         {
             X = x;
             Y = y;
-            ImageCharacter = Constants.TileImage;
-            Color = Constants.TileColor;
+            ImageCharacter = image;
+            Color = color;
+            IsFree = isFree;
+        }
+    }
+
+    public class Floor : Tile
+    {
+        public Floor(int x, int y)
+            : base(x, y, Constants.FloorImage, Constants.FloorColor, true)
+        {
         }
     }
 
     public class Wall : Tile
     {
         public Wall(int x, int y)
-            : base(x, y)
+            : base(x, y, Constants.WallImage, Constants.WallColor, false)
         {
             ImageCharacter = Constants.WallImage;
             Color = Constants.WallColor;
         }
     }
 
-    public class Creature : Tile
+    abstract public class Creature : Tile
     {
         public int Hits { get; set; }
+        public Creature(Point p, char image, ConsoleColor color, bool isFree)
+            : base(p.X, p.Y, image, color, isFree)
+        {
+
+        }
     }
 
     public class Player : Creature
     {
+        public Inventory inventory = new Inventory();
+        public Thing ThingInHand { get; set; }
+
         public Player(Point p)
+            : base(p, Constants.PlayerImage, Constants.PlayerColor, false)
         {
-            ImageCharacter = Constants.PlayerImage;
-            Color = Constants.PlayerColor;
-            X = p.X;
-            Y = p.Y;
             Hits = 5;
+            ThingInHand = null;
         }
     }
 
     public class Monster : Creature
     {
-        public Monster(Point p)
+        public Weapon firstgun { get; set; }
+        public Weapon secondgun { get; set; }
+
+        public Monster(Point p, char image, ConsoleColor color, int hits, Weapon firstGun, Weapon secondGun)
+           : base(p, image, color, false)
         {
-            ImageCharacter = Constants.MonsterImage;
-            Color = Constants.MonsterColor;
+            firstgun = firstGun;
+            secondgun = secondGun;
+            Hits = hits;
             X = p.X;
             Y = p.Y;
-            Hits = r.Next(1,6);
+        }
+
+        public Weapon LeaveWeapon(int numberOfGun)
+        {
+            if (numberOfGun % 2 == 0)
+            {
+                return firstgun;
+            }
+            else
+            {
+                return secondgun;
+            }
         }
     }
-    public class Bandage : Creature
+
+    public class Inventory
+    {
+        Thing[] things = new Thing[10];
+        int header { get; set; }
+
+        public void Pick(Thing thing)
+        {
+            things[header] = thing;
+        }
+        public Thing Push()
+        {
+            Thing thingToReturn = things[header];
+            things[header] = null;
+            return thingToReturn;
+        }
+        public void Choose(int number)
+        {
+            header = number - 1;
+        }
+        public bool IsCellFree(int number)
+        {
+            if (number == 0 || things[number - 1] is Thing)
+                return false;
+            return true;
+        }
+        public void GetInventoryState()
+        {
+            string image = "free ";
+            Console.SetCursorPosition(15, 34);
+            Console.Write("                                                                           ");
+            Console.SetCursorPosition(15, 34);
+            for (int i = 0; i < 9; i++)
+            {
+                Console.Write("{0}- ", i + 1);
+                if (things[i] != null)
+                {
+                    Console.Write(things[i].ImageCharacter.ToString() + " ");
+                }
+                else
+                {
+                    Console.Write(image);
+                }
+            }
+        }
+    }
+
+    abstract public class Thing : Tile
+    {
+        public Thing(Point p, char image, ConsoleColor color)
+            : base(p.X, p.Y, image, color, false)
+        {   
+        }
+    }
+
+    //this is superclass
+    abstract public class Potion : Thing
+    {
+        public Potion(Point p, char image, ConsoleColor color)
+            : base(p, image, color)
+        {
+
+        }
+        public abstract void Apply(Weapon gun);
+    }
+
+    public class Rage : Potion
+    {
+        public Rage(Point p)
+            : base(p, Constants.RageImage, Constants.RageColor)
+        {
+        }
+        //RiseDamagePoint
+        public override void Apply(Weapon gun)
+        {
+            gun.DamagePoints *= 5;
+        }
+    }
+
+    public class RadiusExpansion : Potion
+    {
+        public RadiusExpansion(Point p)
+            : base(p, Constants.RadiusExpansionImage, Constants.RadiusExpansionColor)
+        {
+        }
+        //RiseRadius
+        public override void Apply(Weapon gun)
+        {
+            gun.RadiusOfApplication *= 3;
+        }
+    }
+
+    //this is superclass
+    public class Weapon : Thing
+    {
+        public int DamagePoints { get; set; }
+        public int RadiusOfApplication { get; set; }
+
+        public Weapon(Point p, int damagePoints, int radius, char image, ConsoleColor color)
+            : base(p, image, color)
+        {
+            DamagePoints = damagePoints;
+            RadiusOfApplication = radius;
+        }
+
+        public void DealDamage(Map map, Tile[,] Tiles, Player player, Monster monster, char direction, char image, ConsoleColor color)
+        {
+            Point startPoint = new Point(monster.X, monster.Y);
+            while(startPoint.X != player.X || startPoint.Y != player.Y)
+            {
+                if(direction == 'X')
+                {
+                    if(startPoint.Y - player.Y > 0)
+                    {
+                        startPoint.Y--;
+                    }
+                    else
+                    {
+                        startPoint.Y++;
+                    }
+                }
+                else if(direction == 'Y')
+                {
+                    if(startPoint.X - player.X > 0)
+                    {
+                        startPoint.X--;
+                    }
+                    else
+                    {
+                        startPoint.X++;
+                    }
+                }
+                if(startPoint.X == player.X && startPoint.Y == player.Y)
+                {
+                    player.Hits -= DamagePoints;
+                    break;
+                }
+                StrikeAnimation(Tiles, startPoint, image, color);
+                GraphicsEngine.Refresh(map);
+                //Console.Beep();
+                Thread.Sleep(1);
+                Tiles[startPoint.X, startPoint.Y].ImageCharacter = Constants.FloorImage;
+                Tiles[startPoint.X, startPoint.Y].Color = Constants.FloorColor;
+            }
+        }
+
+        public static void StrikeAnimation(Tile[,] Tiles, Point bulletPoint, char image, ConsoleColor color)
+        {
+            Tiles[bulletPoint.X, bulletPoint.Y].ImageCharacter = image;
+            Tiles[bulletPoint.X, bulletPoint.Y].Color = color;
+        }
+    } 
+
+    public class Bandage : Tile
     {
         public Bandage(Point p)
+            : base(p.X, p.Y, Constants.BandageImage, Constants.BandageColor, false)
+        {}
+    }  
+
+    public class Building
+    {
+        public int length;
+        public int height;
+        public string Type { get; set; }
+        public Building() { }
+
+        public Building(int lengthOfBuilding, int heightOfBuildind, string type)
         {
-            ImageCharacter = Constants.BandageImage;
-            Color = Constants.BandageColor;
-            X = p.X;
-            Y = p.Y;
-            Hits = r.Next(1,3);
+            length = lengthOfBuilding;
+            height = heightOfBuildind;
+            Type = type;
+        }
+
+        public static void SetBuildingtFromTextFile(string nameOfBuilding, Point startpoint, Tile[,] Tiles)
+        {
+            string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $@"buildings\{nameOfBuilding}.txt");
+
+            if (File.Exists(path) == false)
+            {
+                Console.WriteLine($"Файла для {nameOfBuilding} не существует");
+                return;
+            }
+
+            using (StreamReader sr = File.OpenText(path))
+            {
+                int x = startpoint.X;
+                int y = startpoint.Y;
+
+                int symbol = sr.Read();
+                while (symbol != -1)
+                {
+                    if (symbol != 10 && symbol != 13)
+                    {
+                        Tiles[x, y].ImageCharacter = Convert.ToChar(symbol);
+                        if (symbol != 46)
+                        {
+                            Tiles[x, y].IsFree = false;
+                        }
+                        x++;
+                    }
+                    else
+                    {
+                        if (symbol == 10)
+                        {
+                            x = startpoint.X;
+                            y--;
+                        }
+                    }
+                    symbol = sr.Read();
+                }
+            }
         }
     }
-    
 
     public struct Point
     {

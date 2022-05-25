@@ -1,0 +1,23 @@
+[33mcommit 1d20085dbdf2f8c87d92b64511b0da249a28eaef[m[33m ([m[1;36mHEAD -> [m[1;32mmaster[m[33m, [m[1;31mRogue/master[m[33m)[m
+Author: Егор Агапеев <agapeev.egor@yandex.ru>
+Date:   Tue Mar 22 03:54:06 2022 +0300
+
+    added the difficulty of levels
+
+[33mcommit ce3b47aa41154250b074fb892d8670d397e82598[m
+Author: Егор Агапеев <agapeev.egor@yandex.ru>
+Date:   Tue Mar 22 02:56:41 2022 +0300
+
+    add levels, monsters can move
+
+[33mcommit 55d210ff9aecb91f08b3f8fa24428b5fb690c13a[m
+Author: Егор Агапеев <agapeev.egor@yandex.ru>
+Date:   Mon Mar 21 20:39:27 2022 +0300
+
+    added monster and bandages mechanic
+
+[33mcommit 49fa20619466581a94a0c3268667957c62892715[m[33m ([m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: IvanMitryakhin <ivan.mitryakhin@mail.ru>
+Date:   Sun Nov 21 20:33:50 2021 +0400
+
+    Release v0.1
