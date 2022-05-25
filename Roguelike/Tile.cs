@@ -24,7 +24,6 @@ namespace Roguelike
             Color = color;
             IsFree = isFree;
         }
-
     }
 
     public class Floor : Tile
@@ -148,7 +147,6 @@ namespace Roguelike
             : base(p.X, p.Y, image, color, false)
         {   
         }
-        
     }
 
     //this is superclass
@@ -240,7 +238,6 @@ namespace Roguelike
                 Tiles[startPoint.X, startPoint.Y].ImageCharacter = Constants.FloorImage;
                 Tiles[startPoint.X, startPoint.Y].Color = Constants.FloorColor;
             }
-            
         }
 
         public static void StrikeAnimation(Tile[,] Tiles, Point bulletPoint, char image, ConsoleColor color)
@@ -248,15 +245,13 @@ namespace Roguelike
             Tiles[bulletPoint.X, bulletPoint.Y].ImageCharacter = image;
             Tiles[bulletPoint.X, bulletPoint.Y].Color = color;
         }
-
     } 
 
     public class Bandage : Tile
     {
         public Bandage(Point p)
             : base(p.X, p.Y, Constants.BandageImage, Constants.BandageColor, false)
-        {
-        }
+        {}
     }  
 
     public class Building
@@ -275,7 +270,8 @@ namespace Roguelike
 
         public static void SetBuildingtFromTextFile(string nameOfBuilding, Point startpoint, Tile[,] Tiles)
         {
-            string path = $@"C:\PROJECTS!\Roguelike\Seishin-Roguelike\Roguelike\{nameOfBuilding}.txt";
+            string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $@"buildings\{nameOfBuilding}.txt");
+
             if (File.Exists(path) == false)
             {
                 Console.WriteLine($"Файла для {nameOfBuilding} не существует");
@@ -324,5 +320,4 @@ namespace Roguelike
             Y = y;
         }
     }
-
 }

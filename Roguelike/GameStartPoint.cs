@@ -14,10 +14,10 @@ namespace Roguelike
         {
             Console.SetWindowSize(ScreenWidth, ScreenHeight);
             Console.SetBufferSize(ScreenWidth, ScreenHeight);
+            
             Console.CursorVisible = false;
 
-            MessageGenerator.WriteStartInfo();
-            while (true)
+            while(true)
             {
                 int level = 1;
                 PlayTheGame(level);
@@ -30,22 +30,26 @@ namespace Roguelike
         static void PlayTheGame(int level)
         {
             GraphicsEngine.cameraOffsetX = 0;
-            GraphicsEngine.cameraOffsetX = 0;
+            GraphicsEngine.cameraOffsetY = 0;
+            Console.Clear();
+            MessageGenerator.WriteStartInfo();
+    
             Map map = new Map(mapWidth, mapHeight);
+
             while (map.IsGameActive)
             {
                 GraphicsEngine.Refresh(map);
                 MessageGenerator.WriteInfoAboutPlayer(map, level);
                 map.ExecuteCommand(Console.ReadKey());
-                if (map.monsters.Count > 0)//>
+                if (map.monsters.Count > 0)
                 {
                     map.MonstersActivity(map);
                 }
-                else if (map.bandages.Count == 0)//==
+                else if (map.bandages.Count == 0)
                 {
-                    level++;
-                    map.CreateNewLevel(level);
-                    MessageGenerator.WriteInfoAboutPlayer(map, level);
+                    MessageGenerator.WriteEndLevel(15);
+                    Thread.Sleep(3000);
+                    PlayTheGame(level + 1);
                 }
             }
         }

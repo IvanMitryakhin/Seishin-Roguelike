@@ -6,7 +6,7 @@ namespace Roguelike
     {
         public static int xMaxScreen = 40;
         public static int yMaxScreen = 30;
-        public static int cameraOffsetX ;
+        public static int cameraOffsetX;
         public static int cameraOffsetY;
 
         public static void Refresh(Map map)
@@ -27,11 +27,9 @@ namespace Roguelike
                 {
                     Console.ForegroundColor = map.Tiles[j + cameraOffsetX, i + cameraOffsetY].Color;
                     Console.Write(map.Tiles[j + cameraOffsetX, i + cameraOffsetY].ImageCharacter);
-
                 }
                 Console.WriteLine();
             }
         }
-
     }
 }

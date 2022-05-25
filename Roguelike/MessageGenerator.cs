@@ -5,8 +5,8 @@ namespace Roguelike
 {
     public static class MessageGenerator
     {
-        private static int xMessagePosition = 91;
-        private static int yMessagePosition = 4;
+        private const int xMessagePosition = 91;
+        private const int yMessagePosition = 4;
 
         private static Dictionary<int, string> _messages =
         new Dictionary<int, string>
@@ -49,8 +49,6 @@ namespace Roguelike
             Console.Write("Take thing in hand from inventory: T");
             Console.SetCursorPosition(93, 22);
             Console.Write("Eject thing on map from hand: E");
-            Console.SetCursorPosition(84, 0);
-            Console.Write("Сhoose the name of your samurai: ");
         }
 
         public static void WriteInfoAboutPlayer(Map map, int level)
@@ -62,8 +60,6 @@ namespace Roguelike
             Console.Write("Level: {0}", level);
             Console.SetCursorPosition(90, 34);
             Console.Write("HP: {0} ", map.player.Hits);
-            Console.SetCursorPosition(90, 34);
-            Console.Write("", map.player.inventory);
             Console.SetCursorPosition(100, 34);
             Console.Write("Monsters: {0}, Bandages: {1}", map.monsters.Count, map.bandages.Count);
             Console.SetCursorPosition(0, 34);
@@ -82,6 +78,7 @@ namespace Roguelike
         {
             Console.Clear();
             Console.SetCursorPosition(60, 15);
+            Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine(_messages[number]);
         }
     }

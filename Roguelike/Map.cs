@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading;
 
 namespace Roguelike
 {
@@ -57,7 +56,7 @@ namespace Roguelike
 
         public Map(int xMax, int yMax)
         {
-            player = new Player(new Point(18, 16));
+            player = new Player(new Point(18,16)); //18, 16
             walls = new List<Wall>();
             monsters = new List<Monster>();
             bandages = new List<Bandage>();
@@ -106,7 +105,19 @@ namespace Roguelike
                     Tiles[j, i] = new Floor(j, i);
                 }
             }
+        }
 
+        private Point CreateRandomPoint(int xMaxValue, int yMaxValue)
+        {
+            Random r = new Random();
+            Point randomPoint;
+            do
+            {
+                randomPoint = new Point(r.Next(1, xMaxValue), r.Next(1, yMaxValue));
+            }
+            while (!Tiles[randomPoint.X, randomPoint.Y].IsFree);
+
+            return randomPoint;
         }
 
         private void SpawnThings()
@@ -115,28 +126,9 @@ namespace Roguelike
             for (int i = 0; i < 10; i++)
             {
                 Point startPoint = CreateRandomPoint(xMax, yMax);
-                if (!Tiles[startPoint.X, startPoint.Y].IsFree)
-                {
-                    while (!Tiles[startPoint.X, startPoint.Y].IsFree)
-                    {
-                        startPoint = CreateRandomPoint(xMax, yMax);
-                    }
-                }
                 
                 things.Add(_types[r.Next(6)](startPoint));
             }
-        }
-
-        private void ChooseRandomPotion()
-        {
-
-        }
-
-        private Point CreateRandomPoint(int xMaxValue, int yMaxValue)
-        {
-            Random r = new Random();
-            Point randomPoint = new Point(r.Next(2, xMaxValue), r.Next(2, yMaxValue));
-            return randomPoint;
         }
 
         private void SpawnPlayer()
@@ -152,7 +144,6 @@ namespace Roguelike
             bandages.ForEach(b => Tiles[b.X, b.Y] = b);
             things.ForEach(t => Tiles[t.X, t.Y] = t);
         }
-
 
         private void SpawnBuildings()
         {
@@ -175,9 +166,7 @@ namespace Roguelike
                     Building.SetBuildingtFromTextFile(buildings[numberOfBuilding].Type, startPoint, Tiles);
                     countOfBuildings++;
                 }
-
             }
-
         }
 
         private bool CheckingForPossibilityOfConstruction(Point p, int length, int height)
@@ -193,7 +182,6 @@ namespace Roguelike
                     {
                         return false;
                     }
-
                 }
                 breakPoint.X++;
 
@@ -208,17 +196,10 @@ namespace Roguelike
         private void SpawnMobsAndBandages(int level)
         {
             Random r = new Random();
-            for (int i = 0; i < r.Next(10 + level, 12 + level); i++)
+            for (int i = 0; i < r.Next(10 + level, 14 + level*2); i++)
             {
                 // Ensures if mob's spawning position occupied position
                 Point startPoint = CreateRandomPoint(xMax, yMax);
-                if (!Tiles[startPoint.X, startPoint.Y].IsFree)
-                {
-                    while (!Tiles[startPoint.X, startPoint.Y].IsFree)
-                    {
-                        startPoint = CreateRandomPoint(xMax, yMax);
-                    }
-                }
 
                 if (r.Next(level + 5) > 1)
                 {
@@ -241,7 +222,6 @@ namespace Roguelike
                         Monster distantCombatMonster = new Monster(startPoint, image, color, 5, (Weapon)_types[2](startPoint), (Weapon)_types[3](startPoint));
                         monsters.Add(distantCombatMonster);
                     }
-
                 }
                 else
                 {
@@ -289,21 +269,18 @@ namespace Roguelike
                 case ConsoleKey.I:
                     player.inventory.GetInventoryState();
                     break;
-
             }
             int nothing = -1;
             if (IsMobNear(player.X, player.Y, ref nothing))
             {
                 MessageGenerator.WriteSomeMessage(1);
             }
-
         }
 
         private void RemoveThing(int xCoordinate, int yCoordinate)
         {
             Tiles[xCoordinate, yCoordinate] = new Floor(xCoordinate, yCoordinate);
         }
-
 
         //method to implement in the future
         private void ApplyThing()
@@ -336,7 +313,6 @@ namespace Roguelike
         {
             int positionInInventory = ChooseThing();
             player.inventory.Choose(positionInInventory);
-            //if()
         }
 
         //Work with things, hand and inventory
@@ -375,14 +351,14 @@ namespace Roguelike
                     ConsoleKeyInfo command = Console.ReadKey();
                     if (command.KeyChar == 121)
                     {
-                        Exchange();
+                        ExchangeThings();
                         Console.Beep();
                     }
                 }
             }
         }
 
-        private void Exchange()
+        private void ExchangeThings()
         {
             Thing thingForExchange = player.ThingInHand;
             player.ThingInHand = player.inventory.Push();
@@ -409,7 +385,7 @@ namespace Roguelike
                     ConsoleKeyInfo command = Console.ReadKey();
                     if (command.KeyChar == 121)
                     {
-                        Exchange();
+                        ExchangeThings();
                         Console.Beep();
                     }
                 }
@@ -543,8 +519,7 @@ namespace Roguelike
                     DestructionOfBandage(m, positionOfCreature);
                     MessageGenerator.WriteSomeMessage(3);
                 }
-            }
-            //Thread.Sleep(100);
+            };
         }
 
         private void MonstersKick(Map map, Monster monster)
@@ -600,25 +575,25 @@ namespace Roguelike
             return 'N';
         }
 
-        private void MonstersApproach(Monster m)
-        {
-            if (Math.Abs(m.X + 1 - player.X) < Math.Abs(m.X - player.X) && Math.Abs(m.X + 1 - player.X) > 0)
-            {
-                m.X += 1;
-            }
-            else if (Math.Abs(m.X - 1 - player.X) < Math.Abs(m.X - player.X) && Math.Abs(m.X - 1 - player.X) > 0)
-            {
-                m.X -= 1;
-            }
-            if (Math.Abs(m.Y + 1 - player.Y) < Math.Abs(m.Y - player.Y) && Math.Abs(m.Y + 1 - player.Y) > 0)
-            {
-                m.Y += 1;
-            }
-            else if (Math.Abs(m.Y - 1 - player.Y) < Math.Abs(m.Y - player.Y) && Math.Abs(m.Y - 1 - player.Y) > 0)
-            {
-                m.Y -= 1;
-            }
-        }
+        //private void MonstersApproach(Monster m)
+        //{
+        //    if (Math.Abs(m.X + 1 - player.X) < Math.Abs(m.X - player.X) && Math.Abs(m.X + 1 - player.X) > 0)
+        //    {
+        //        m.X += 1;
+        //    }
+        //    else if (Math.Abs(m.X - 1 - player.X) < Math.Abs(m.X - player.X) && Math.Abs(m.X - 1 - player.X) > 0)
+        //    {
+        //        m.X -= 1;
+        //    }
+        //    if (Math.Abs(m.Y + 1 - player.Y) < Math.Abs(m.Y - player.Y) && Math.Abs(m.Y + 1 - player.Y) > 0)
+        //    {
+        //        m.Y += 1;
+        //    }
+        //    else if (Math.Abs(m.Y - 1 - player.Y) < Math.Abs(m.Y - player.Y) && Math.Abs(m.Y - 1 - player.Y) > 0)
+        //    {
+        //        m.Y -= 1;
+        //    }
+        //}
 
         private void HitTheMonster()
         {
@@ -707,17 +682,6 @@ namespace Roguelike
             return bandageNear;
         }
 
-        // All updates
-        public void CreateNewLevel(int level)
-        {
-            Thread.Sleep(1000);
-            Console.Clear();
-            MessageGenerator.WriteEndLevel(15);
-            player.Hits += 5;
-            Thread.Sleep(3000);
-            Console.Clear();
-            SpawnMobsAndBandages(level);
-        }
 
         public bool IsGameActive
         {
